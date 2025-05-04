@@ -7,7 +7,7 @@ def to_set[T](col: Collection[T]) -> set[T]:
     return col if isinstance(col, set) else set(col)
 
 
-class Solver:
+class LetterBoxed:
     def __init__(self, dictionary: Collection[str], sides: Collection[str]):
         self.dictionary = self.get_allowed_words(dictionary, sides)
         self.prefix_dict = self.get_prefix_dict(self.dictionary)
