@@ -10,8 +10,9 @@ import (
 // PrefixDict maps the first character of a word to all words that start with it.
 type PrefixDict map[rune]sets.Set[string]
 
-type SolveTask struct {
-	previousWords []string
+type PartialTaskResult struct {
+	lastWords          []string
+	potentialNextWords []string
 }
 
 // LetterBoxed holds the dictionary and prefix dictionary for fast lookups.
@@ -35,45 +36,75 @@ func NewLetterBoxed(dict []string, sides []string) *LetterBoxed {
 // It returns a read-only channel and launches a worker pool to send results.
 func (s *LetterBoxed) Solutions(maxWords int) <-chan []string {
 	out := make(chan []string)
-	tasks := make(chan SolveTask, 100_000_000)
+	newWordAvailable := make(chan struct{})
+	wordTree := StringTree{}
+	// Mutex for concurrent access to the word tree
+	var mu sync.Mutex
+	// The counter of this waitgroup represents the number of tasks waiting to be completed
 	var wg sync.WaitGroup
 
 	// Start as many workers as there are CPU cores
 	for i := 0; i < runtime.NumCPU(); i++ {
 		go func() {
-			for t := range tasks {
-				s.workSubSolutions(t.previousWords, maxWords, out, tasks, &wg)
+			for {
+				mu.Lock()
+				previousWords := wordTree.PopLeaf()
+				mu.Unlock()
+
+				if previousWords == nil {
+					_, ok := <-newWordAvailable
+					if !ok {
+						return
+					}
+					mu.Lock()
+					previousWords = wordTree.PopLeaf()
+					mu.Unlock()
+				}
+
+				res := s.subSolution(previousWords, maxWords)
+				for _, last := range res.lastWords {
+					out <- append(previousWords, last)
+				}
+				for _, base := range res.potentialNextWords {
+					mu.Lock()
+					wordTree.PushSequence(append(previousWords, base))
+					mu.Unlock()
+
+					wg.Add(1)
+					select {
+					case newWordAvailable <- struct{}{}:
+					default:
+					}
+				}
+
+				wg.Done()
 			}
 		}()
 	}
 
-	// Seed initial task
 	wg.Add(1)
-	tasks <- SolveTask{previousWords: nil}
+	newWordAvailable <- struct{}{}
 
 	go func() {
 		wg.Wait()
-		close(tasks)
+		close(newWordAvailable)
 		close(out)
 	}()
 
 	return out
 }
 
-func (s *LetterBoxed) workSubSolutions(
+func (s *LetterBoxed) subSolution(
 	previousWords []string,
 	maxWords int,
-	out chan<- []string,
-	tasks chan<- SolveTask,
-	wg *sync.WaitGroup,
-) {
+) (res PartialTaskResult) {
 	var wordSet sets.Set[string]
 
 	if len(previousWords) == 0 {
 		wordSet = s.dict
 	} else {
-		lastWord := previousWords[len(previousWords)-1]
 		// The last letter of the last word is the starting letter for the current word
+		lastWord := previousWords[len(previousWords)-1]
 		var startingLetter rune
 		for _, ch := range lastWord {
 			startingLetter = ch
@@ -87,18 +118,17 @@ func (s *LetterBoxed) workSubSolutions(
 	}
 
 	for word := range wordSet {
-		newWords := append(previousWords, word)
+		newWordSeq := append(previousWords, word)
 
 		// If there are no more unused letters, it means we've found a solution
-		if s.countUnusedLetters(newWords) == 0 {
-			out <- newWords
-		} else if len(newWords) < maxWords {
-			wg.Add(1)
-			tasks <- SolveTask{previousWords: newWords}
+		if s.countUnusedLetters(newWordSeq) == 0 {
+			res.lastWords = append(res.lastWords, word)
+		} else if len(newWordSeq) < maxWords {
+			res.potentialNextWords = append(res.potentialNextWords, word)
 		}
 	}
 
-	wg.Done()
+	return
 }
 
 // getAllowedWords filters dictionary words that can be formed with side letters and game rules.
