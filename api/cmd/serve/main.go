@@ -3,7 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"letter-boxed-solver/pkg/letterboxed"
+	"letter-boxed-solver/internal/letterboxed"
+	"letter-boxed-solver/internal/middleware"
 	"log"
 	"net/http"
 	"slices"
@@ -55,11 +56,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(solutionsJson)
-
 }
 
 func main() {
-	http.HandleFunc("/todays-solutions", handler)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/todays-solutions", handler)
 	fmt.Println("Starting server at http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":8080", middleware.GzipMiddleware(mux)))
 }

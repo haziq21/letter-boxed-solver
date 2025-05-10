@@ -2,7 +2,7 @@ package letterboxed
 
 import (
 	"context"
-	"letter-boxed-solver/pkg/sets"
+	"letter-boxed-solver/internal/sets"
 	"runtime"
 	"strings"
 	"sync"

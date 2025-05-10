@@ -4,13 +4,13 @@ import "sync"
 
 // StringTree is a thread-safe tree that stores strings.
 type StringTree struct {
-	rootNode *TreeNode
+	RootNode *TreeNode
 	mu       sync.Mutex
 	newSeq   chan []string
 }
 
 func NewStringTree() *StringTree {
-	return &StringTree{rootNode: &TreeNode{}, newSeq: make(chan []string)}
+	return &StringTree{RootNode: &TreeNode{}, newSeq: make(chan []string)}
 }
 
 func (t *StringTree) PushSequence(seq []string) {
@@ -18,7 +18,7 @@ func (t *StringTree) PushSequence(seq []string) {
 	case t.newSeq <- seq:
 	default:
 		t.mu.Lock()
-		t.rootNode.PushSequence(seq)
+		t.RootNode.PushSequence(seq)
 		t.mu.Unlock()
 	}
 }
@@ -26,7 +26,7 @@ func (t *StringTree) PushSequence(seq []string) {
 func (t *StringTree) PopSequence() []string {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	return t.rootNode.PopSequence()
+	return t.RootNode.PopSequence()
 }
 
 func (t *StringTree) WaitToPopSequence() []string {
