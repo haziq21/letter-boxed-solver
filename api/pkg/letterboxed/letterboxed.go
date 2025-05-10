@@ -1,6 +1,7 @@
 package letterboxed
 
 import (
+	"context"
 	"letter-boxed-solver/pkg/sets"
 	"runtime"
 	"strings"
@@ -35,11 +36,25 @@ func NewLetterBoxed(dict []string, sides []string) *LetterBoxed {
 // Solutions finds all sequences of words that adhere to the rules of the game.
 // It returns a read-only channel and launches a worker pool to send results.
 func (s *LetterBoxed) Solutions(maxWords int) <-chan []string {
+	if maxWords < 1 {
+		return nil
+	}
+
 	out := make(chan []string)
-	newWordAvailable := make(chan struct{})
-	wordTree := StringTree{}
-	// Mutex for concurrent access to the word tree
-	var mu sync.Mutex
+
+	if maxWords == 1 {
+		go func() {
+			for _, last := range s.subSolution([]string{}, maxWords).lastWords {
+				out <- []string{last}
+			}
+			close(out)
+		}()
+
+		return out
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	wordTree := NewStringTree()
 	// The counter of this waitgroup represents the number of tasks waiting to be completed
 	var wg sync.WaitGroup
 
@@ -47,34 +62,21 @@ func (s *LetterBoxed) Solutions(maxWords int) <-chan []string {
 	for i := 0; i < runtime.NumCPU(); i++ {
 		go func() {
 			for {
-				mu.Lock()
-				previousWords := wordTree.PopLeaf()
-				mu.Unlock()
-
-				if previousWords == nil {
-					_, ok := <-newWordAvailable
-					if !ok {
-						return
-					}
-					mu.Lock()
-					previousWords = wordTree.PopLeaf()
-					mu.Unlock()
+				select {
+				case <-ctx.Done():
+					return
+				default:
 				}
 
+				previousWords := wordTree.WaitToPopSequence()
 				res := s.subSolution(previousWords, maxWords)
+
 				for _, last := range res.lastWords {
 					out <- append(previousWords, last)
 				}
 				for _, base := range res.potentialNextWords {
-					mu.Lock()
 					wordTree.PushSequence(append(previousWords, base))
-					mu.Unlock()
-
 					wg.Add(1)
-					select {
-					case newWordAvailable <- struct{}{}:
-					default:
-					}
 				}
 
 				wg.Done()
@@ -82,12 +84,14 @@ func (s *LetterBoxed) Solutions(maxWords int) <-chan []string {
 		}()
 	}
 
-	wg.Add(1)
-	newWordAvailable <- struct{}{}
+	for word := range s.dict {
+		wordTree.PushSequence([]string{word})
+		wg.Add(1)
+	}
 
 	go func() {
 		wg.Wait()
-		close(newWordAvailable)
+		cancel()
 		close(out)
 	}()
 

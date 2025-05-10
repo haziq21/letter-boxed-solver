@@ -1,24 +1,60 @@
 package letterboxed
 
-type StringTree map[string]*StringTree
+import "sync"
 
-func (wt *StringTree) PushSequence(seq []string) {
+// StringTree is a thread-safe tree that stores strings.
+type StringTree struct {
+	rootNode *TreeNode
+	mu       sync.Mutex
+	newSeq   chan []string
+}
+
+func NewStringTree() *StringTree {
+	return &StringTree{rootNode: &TreeNode{}, newSeq: make(chan []string)}
+}
+
+func (t *StringTree) PushSequence(seq []string) {
+	select {
+	case t.newSeq <- seq:
+	default:
+		t.mu.Lock()
+		t.rootNode.PushSequence(seq)
+		t.mu.Unlock()
+	}
+}
+
+func (t *StringTree) PopSequence() []string {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.rootNode.PopSequence()
+}
+
+func (t *StringTree) WaitToPopSequence() []string {
+	if seq := t.PopSequence(); seq != nil {
+		return seq
+	}
+	return <-t.newSeq
+}
+
+type TreeNode map[string]*TreeNode
+
+func (n *TreeNode) PushSequence(seq []string) {
 	if len(seq) == 0 {
 		return
 	}
 
-	if _, ok := (*wt)[seq[0]]; !ok {
-		(*wt)[seq[0]] = &StringTree{}
+	if _, ok := (*n)[seq[0]]; !ok {
+		(*n)[seq[0]] = &TreeNode{}
 	}
 
-	(*wt)[seq[0]].PushSequence(seq[1:])
+	(*n)[seq[0]].PushSequence(seq[1:])
 }
 
-func (wt *StringTree) PopLeaf() []string {
-	for child, grandChildren := range *wt {
-		subSequence := grandChildren.PopLeaf()
+func (n *TreeNode) PopSequence() []string {
+	for child, grandChildren := range *n {
+		subSequence := grandChildren.PopSequence()
 		if len(*grandChildren) == 0 {
-			delete(*wt, child)
+			delete(*n, child)
 		}
 
 		return append([]string{child}, subSequence...)
