@@ -2,7 +2,7 @@ package letterboxed
 
 import (
 	"letter-boxed-solver/pkg/sets"
-	"slices"
+	"runtime"
 	"strings"
 	"sync"
 )
@@ -38,9 +38,8 @@ func (s *LetterBoxed) Solutions(maxWords int) <-chan []string {
 	tasks := make(chan SolveTask, 100_000_000)
 	var wg sync.WaitGroup
 
-	workerCount := 100
-	// Start all the workers
-	for i := 0; i < workerCount; i++ {
+	// Start as many workers as there are CPU cores
+	for i := 0; i < runtime.NumCPU(); i++ {
 		go func() {
 			for t := range tasks {
 				s.workSubSolutions(t.previousWords, maxWords, out, tasks, &wg)
@@ -87,25 +86,15 @@ func (s *LetterBoxed) workSubSolutions(
 		return
 	}
 
-	sortedWords := wordSet.ToSlice()
-	usedLetters := sets.New[rune]()
-	for _, word := range previousWords {
-		for _, ch := range word {
-			usedLetters.Add(ch)
-		}
-	}
-	unusedLetters := s.allowedLetters().Diff(usedLetters)
-	s.sortWordsByLetterUsage(sortedWords, unusedLetters.ToSlice())
-
-	for _, word := range sortedWords {
-		newUnused := unusedLetters.Diff(sets.New([]rune(word)...))
+	for word := range wordSet {
+		newWords := append(previousWords, word)
 
 		// If there are no more unused letters, it means we've found a solution
-		if len(newUnused) == 0 {
-			out <- append(previousWords, word)
-		} else if len(previousWords)+1 < maxWords {
+		if s.countUnusedLetters(newWords) == 0 {
+			out <- newWords
+		} else if len(newWords) < maxWords {
 			wg.Add(1)
-			tasks <- SolveTask{previousWords: append(previousWords, word)}
+			tasks <- SolveTask{previousWords: newWords}
 		}
 	}
 
@@ -148,37 +137,21 @@ func getAllowedWords(dict []string, sides []string) sets.Set[string] {
 	return allowedWords
 }
 
-// sortWordsByLetterUsage sorts words by descending order of the number of distinct letters from countedLetters they use.
-func (s *LetterBoxed) sortWordsByLetterUsage(words []string, countedLetters []rune) {
-	letterUsages := make(map[string]int)
-	for _, word := range words {
-		letterUsages[word] = getLetterUsage(word, countedLetters)
-	}
+// countUnusedLetters counts the number of letters that are not used in the given words.
+func (s *LetterBoxed) countUnusedLetters(words []string) int {
+	unusedLetters := sets.New[rune]()
 
-	slices.SortFunc(words, func(a, b string) int {
-		return letterUsages[b] - letterUsages[a]
-	})
-}
-
-// allowedLetters returns a set of letters that can be used to form words.
-func (s *LetterBoxed) allowedLetters() sets.Set[rune] {
-	allowed := sets.New[rune]()
 	for prefix := range s.prefixDict {
-		allowed.Add(prefix)
+		unusedLetters.Add(prefix)
 	}
-	return allowed
-}
 
-// getLetterUsage counts distinct letters from countedLetters used in word.
-func getLetterUsage(word string, countedLetters []rune) int {
-	countedLettersSet := sets.New(countedLetters...)
-	seen := sets.New[rune]()
-	for _, ch := range word {
-		if countedLettersSet.Contains(ch) {
-			seen.Add(ch)
+	for _, word := range words {
+		for _, ch := range word {
+			unusedLetters.Remove(ch)
 		}
 	}
-	return len(seen)
+
+	return len(unusedLetters)
 }
 
 // buildPrefixDict constructs a map of starting letters to words.
