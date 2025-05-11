@@ -1,0 +1,36 @@
+---
+import "../styles/global.css";
+import GithubIcon from "../components/GithubIcon.astro";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Letter unBoxed</title>
+  </head>
+  <body class="font-franklin bg-white">
+    <header class="px-8 py-6">
+      <div class="flex justify-between items-baseline mb-2">
+        <h1 class="font-karnak text-2xl">Letter unBoxed</h1>
+        <a href="https://github.com/haziq21/letter-boxed-solver"><GithubIcon /></a>
+      </div>
+      <p class="text-sm">
+        A computed archive of every accepted 2-word solution for the New York Times'
+        <a href="https://www.nytimes.com/puzzles/letter-boxed" class="underline">Letter Boxed</a>.
+      </p>
+    </header>
+
+    <div class="bg-rose-300 h-90"></div>
+
+    <main>
+      <div class="px-8 pt-6">
+        <span class="font-bold">May 11, 2025</span>
+        <ul>
+          <li>CONJURORS &ndash; SHIRTWAIST</li>
+        </ul>
+      </div>
+    </main>
+  </body>
+</html>
