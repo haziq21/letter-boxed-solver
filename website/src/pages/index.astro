@@ -1,6 +1,18 @@
 ---
 import "../styles/global.css";
 import GithubIcon from "../components/GithubIcon.astro";
+import { db, solutions } from "../db";
+import { desc, asc } from "drizzle-orm";
+
+const solsFromDb = await db.select().from(solutions).orderBy(desc(solutions.date), asc(solutions.words));
+const sols: Map<string, string[][]> = new Map();
+for (const s of solsFromDb) {
+  if (!sols.has(s.date)) {
+    sols.set(s.date, []);
+  }
+  const words = sols.get(s.date)!;
+  words.push(s.words.split(" "));
+}
 ---
 
 <html lang="en">
@@ -10,7 +22,7 @@ import GithubIcon from "../components/GithubIcon.astro";
     <meta name="viewport" content="width=device-width" />
     <title>Letter unBoxed</title>
   </head>
-  <body class="font-franklin bg-white">
+  <body class="font-franklin bg-white flex flex-col h-[100vh]">
     <header class="px-8 py-6">
       <div class="flex justify-between items-baseline mb-2">
         <h1 class="font-karnak text-2xl">Letter unBoxed</h1>
@@ -24,13 +36,21 @@ import GithubIcon from "../components/GithubIcon.astro";
 
     <div class="bg-rose-300 h-90"></div>
 
-    <main>
-      <div class="px-8 pt-6">
-        <span class="font-bold">May 11, 2025</span>
-        <ul>
-          <li>CONJURORS &ndash; SHIRTWAIST</li>
-        </ul>
-      </div>
+    <main class="flex-1 overflow-y-scroll">
+      {
+        sols.entries().map(([date, sols]) => (
+          <div class="px-8 pt-6">
+            <span class="font-bold">
+              {new Date(date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+            </span>
+            <ul>
+              {sols.map((words) => (
+                <li>{words.join(" – ")}</li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
     </main>
   </body>
 </html>
