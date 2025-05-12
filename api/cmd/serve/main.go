@@ -30,7 +30,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	box := letterboxed.NewLetterBoxed(gameData.Dictionary, gameData.Sides)
+	box := letterboxed.NewBox(gameData.Dictionary, gameData.Sides)
 
 	startTime := time.Now()
 

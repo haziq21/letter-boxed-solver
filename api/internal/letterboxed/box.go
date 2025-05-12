@@ -18,16 +18,18 @@ type PartialTaskResult struct {
 
 // LetterBoxed holds the dictionary and prefix dictionary for fast lookups.
 type LetterBoxed struct {
+	sides      []string
 	dict       sets.Set[string]
 	prefixDict PrefixDict
 }
 
-// NewLetterBoxed constructs a [LetterBoxed] from a list of dictionary words and sides of the square.
-func NewLetterBoxed(dict []string, sides []string) *LetterBoxed {
+// NewBox constructs a [LetterBoxed] from a list of dictionary words and sides of the square.
+func NewBox(dict []string, sides []string) *LetterBoxed {
 	allowedWords := getAllowedWords(dict, sides)
 	prefixes := buildPrefixDict(allowedWords.ToSlice())
 
 	return &LetterBoxed{
+		sides:      sides,
 		dict:       allowedWords,
 		prefixDict: prefixes,
 	}
@@ -35,24 +37,12 @@ func NewLetterBoxed(dict []string, sides []string) *LetterBoxed {
 
 // Solutions finds all sequences of words that adhere to the rules of the game.
 // It returns a read-only channel and launches a worker pool to send results.
-func (s *LetterBoxed) Solutions(maxWords int) <-chan []string {
+func (box *LetterBoxed) Solutions(maxWords int) <-chan []string {
 	if maxWords < 1 {
 		return nil
 	}
 
 	out := make(chan []string)
-
-	if maxWords == 1 {
-		go func() {
-			for _, last := range s.subSolution([]string{}, maxWords).lastWords {
-				out <- []string{last}
-			}
-			close(out)
-		}()
-
-		return out
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
 	wordTree := NewStringTree()
 	// The counter of this waitgroup represents the number of tasks waiting to be completed
@@ -62,6 +52,8 @@ func (s *LetterBoxed) Solutions(maxWords int) <-chan []string {
 	for i := 0; i < runtime.NumCPU(); i++ {
 		go func() {
 			for {
+				// Make this better. This could be a memory leak if the context is
+				// cancelled right after the select (e.g. when maxWords = 1)
 				select {
 				case <-ctx.Done():
 					return
@@ -69,7 +61,7 @@ func (s *LetterBoxed) Solutions(maxWords int) <-chan []string {
 				}
 
 				previousWords := wordTree.WaitToPopSequence()
-				res := s.subSolution(previousWords, maxWords)
+				res := box.subSolution(previousWords, maxWords)
 
 				for _, last := range res.lastWords {
 					out <- append(previousWords, last)
@@ -84,7 +76,11 @@ func (s *LetterBoxed) Solutions(maxWords int) <-chan []string {
 		}()
 	}
 
-	for word := range s.dict {
+	initialRes := box.subSolution([]string{}, maxWords)
+	for _, last := range initialRes.lastWords {
+		out <- []string{last}
+	}
+	for _, word := range initialRes.potentialNextWords {
 		wordTree.PushSequence([]string{word})
 		wg.Add(1)
 	}
@@ -98,14 +94,14 @@ func (s *LetterBoxed) Solutions(maxWords int) <-chan []string {
 	return out
 }
 
-func (s *LetterBoxed) subSolution(
+func (box *LetterBoxed) subSolution(
 	previousWords []string,
 	maxWords int,
 ) (res PartialTaskResult) {
 	var wordSet sets.Set[string]
 
 	if len(previousWords) == 0 {
-		wordSet = s.dict
+		wordSet = box.dict
 	} else {
 		// The last letter of the last word is the starting letter for the current word
 		lastWord := previousWords[len(previousWords)-1]
@@ -115,7 +111,7 @@ func (s *LetterBoxed) subSolution(
 		}
 
 		// Words that were already used in the previous words won't help
-		wordSet = s.prefixDict[startingLetter].Diff(sets.New(previousWords...))
+		wordSet = box.prefixDict[startingLetter].Diff(sets.New(previousWords...))
 	}
 	if len(wordSet) == 0 {
 		return
@@ -125,7 +121,7 @@ func (s *LetterBoxed) subSolution(
 		newWordSeq := append(previousWords, word)
 
 		// If there are no more unused letters, it means we've found a solution
-		if s.countUnusedLetters(newWordSeq) == 0 {
+		if box.countUnusedLetters(newWordSeq) == 0 {
 			res.lastWords = append(res.lastWords, word)
 		} else if len(newWordSeq) < maxWords {
 			res.potentialNextWords = append(res.potentialNextWords, word)
@@ -133,6 +129,25 @@ func (s *LetterBoxed) subSolution(
 	}
 
 	return
+}
+
+// countUnusedLetters counts the number of letters that are not used in the given words.
+func (box *LetterBoxed) countUnusedLetters(words []string) int {
+	unusedLetters := sets.New[rune]()
+
+	for _, side := range box.sides {
+		for _, ch := range side {
+			unusedLetters.Add(ch)
+		}
+	}
+
+	for _, word := range words {
+		for _, ch := range word {
+			unusedLetters.Remove(ch)
+		}
+	}
+
+	return len(unusedLetters)
 }
 
 // getAllowedWords filters dictionary words that can be formed with side letters and game rules.
@@ -169,23 +184,6 @@ func getAllowedWords(dict []string, sides []string) sets.Set[string] {
 		}
 	}
 	return allowedWords
-}
-
-// countUnusedLetters counts the number of letters that are not used in the given words.
-func (s *LetterBoxed) countUnusedLetters(words []string) int {
-	unusedLetters := sets.New[rune]()
-
-	for prefix := range s.prefixDict {
-		unusedLetters.Add(prefix)
-	}
-
-	for _, word := range words {
-		for _, ch := range word {
-			unusedLetters.Remove(ch)
-		}
-	}
-
-	return len(unusedLetters)
 }
 
 // buildPrefixDict constructs a map of starting letters to words.

@@ -20,7 +20,7 @@ func main() {
 		return
 	}
 
-	box := letterboxed.NewLetterBoxed(gameData.Dictionary, gameData.Sides)
+	box := letterboxed.NewBox(gameData.Dictionary, gameData.Sides)
 	startTime := time.Now()
 
 	// Get every solution
