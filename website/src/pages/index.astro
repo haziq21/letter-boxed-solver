@@ -1,18 +1,9 @@
 ---
 import "../styles/global.css";
 import GithubIcon from "../components/GithubIcon.astro";
-import { db, solutions } from "../db";
-import { desc, asc } from "drizzle-orm";
+import { getAllSolutions } from "../repo";
 
-const solsFromDb = await db.select().from(solutions).orderBy(desc(solutions.date), asc(solutions.words));
-const sols: Map<string, string[][]> = new Map();
-for (const s of solsFromDb) {
-  if (!sols.has(s.date)) {
-    sols.set(s.date, []);
-  }
-  const words = sols.get(s.date)!;
-  words.push(s.words.split(" "));
-}
+const sols = await getAllSolutions();
 ---
 
 <html lang="en">

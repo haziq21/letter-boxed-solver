@@ -1,5 +1,16 @@
 import "dotenv/config";
 import { drizzle } from "drizzle-orm/libsql";
 
-export const db = drizzle(`file:${process.env.DB_FILE_NAME!}`);
+export let db: ReturnType<typeof drizzle>;
 export * from "./schema";
+
+if (process.env.ENVIRONMENT !== "production") {
+  db = drizzle(`file:${process.env.DB_FILE_NAME!}`);
+} else {
+  db = drizzle({
+    connection: {
+      url: process.env.DB_URL!,
+      authToken: process.env.DB_AUTH_TOKEN!,
+    },
+  });
+}
