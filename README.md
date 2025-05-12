@@ -1,28 +1,34 @@
-# Letter Boxed Solver
+# Letter unBoxed
 
-This program solves a [Letter Boxed](https://www.nytimes.com/puzzles/letter-boxed) puzzle with a brute-force algorithm. The Go version (`go-src/`) is a re-write of the initial, slower Python version (`py-src/`). The dictionary used (`dictionary.txt`) is taken from [sindresorhus/word-list](https://github.com/sindresorhus/word-list), but Letter Boxed actually uses a much smaller dictionary.
+A computed archive of every accepted 2-word solution for the New York Times' daily [Letter Boxed](https://www.nytimes.com/puzzles/letter-boxed) puzzles.
+
+## How it works
+
+The solver program (`api/`) uses a brute-force algorithm to find solutions for the current Letter Boxed puzzle. The main site (`website/`) displays the archive of past solutions.
+
+A new Letter Boxed puzzle is released daily at 7AM UTC, so at 6AM UTC every day, the main site calls the solver API and stores the solutions on a [Turso](https://turso.tech/) database.
+
+Since it takes too long to run than most serverless providers allow, the solver API is hosted on [fly.io](https://fly.io/) (with the cheapest machine they offer), while the website is hosted on [Vercel](https://vercel.com/home) (free tier) to minimise costs.
 
 ## Usage
 
-For the Python version:
+To start the webapp:
 
 ```
-$ python3 py-src/main.py
+$ cd website
+$ pnpm run dev
 ```
 
-For the Go version:
+To start the API server:
 
 ```
-$ cd go-src
-$ go run cmd/solve/main.go
+$ cd api
+$ go run cmd/serve/main.go
 ```
 
-## Letter Boxed's dictionary
-
-The dictionary that Letter Boxed uses is exposed on `window.gameData.dictionary` on [Letter Boxed](https://www.nytimes.com/puzzles/letter-boxed), though it's different every day because it only contains the words that can be formed with the letters for the current day. As of 3 May 2025, it can be retrieved like so:
+You can also run the solver without started a server with:
 
 ```
-$ curl -s https://www.nytimes.com/puzzles/letter-boxed | grep -oP '"dictionary":\K\[.*?\]'
+$ cd api
+$ go run cmd/solve/main.go --max-words 2
 ```
-
-As a note, the `window.gameData` object also contains the suggested solution for the current day.
