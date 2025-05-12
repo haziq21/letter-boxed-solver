@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { db, solutions, solutionWords, words } from "../db";
+import { db, solutions } from "../db";
 import { z } from "zod";
 
 export const GET: APIRoute = async () => {
@@ -12,25 +12,17 @@ export const GET: APIRoute = async () => {
 
   const today = new Date();
   today.setHours(7, 0, 0, 0); // Letter Boxed updates daily at 7AM UTC
+  const todayString = today.toUTCString();
 
-  // Insert all the solutions into the database
-  const solIds = await db
-    .insert(solutions)
-    .values(Array(sols.length).map(() => ({ date: today.toUTCString() })))
-    .returning({ id: solutions.id });
   await db
-    .insert(words)
-    .values(sols.flatMap((s) => s.map((w) => ({ text: w }))))
-    .onConflictDoNothing();
-  await db.insert(solutionWords).values(
-    sols.flatMap((s, i) =>
-      s.map((w, j) => ({
-        solutionId: solIds[i].id,
-        word: w,
-        order: j,
+    .insert(solutions)
+    .values(
+      sols.map((s) => ({
+        date: todayString,
+        words: s.join(","),
       }))
     )
-  );
+    .onConflictDoNothing();
 
   return new Response(null, { status: 204 });
 };

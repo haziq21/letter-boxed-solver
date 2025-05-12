@@ -1,25 +1,15 @@
-import { sqliteTable, int, text, primaryKey } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, primaryKey } from "drizzle-orm/sqlite-core";
 
-export const solutions = sqliteTable("solutions", {
-  id: int().primaryKey({ autoIncrement: true }),
-  date: text().notNull(),
-});
-
-export const solutionWords = sqliteTable(
-  "solution_words",
+export const solutions = sqliteTable(
+  "solutions",
   {
-    solutionId: int()
-      .references(() => solutions.id)
-      .notNull(),
-    word: text()
-      .references(() => words.text)
-      .notNull(),
-    order: int().notNull(),
+    date: text().notNull(),
+    words: text().notNull(),
   },
-  (table) => [primaryKey({ columns: [table.solutionId, table.word] })]
+  (table) => [primaryKey({ columns: [table.date, table.words] })]
 );
 
-export const words = sqliteTable("words", {
-  text: text().primaryKey(),
+export const dictionary = sqliteTable("dictionary", {
+  word: text().primaryKey(),
   definition: text(),
 });
