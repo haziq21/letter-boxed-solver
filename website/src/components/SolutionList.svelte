@@ -30,10 +30,7 @@
     const observer = new IntersectionObserver(
       (entries) => {
         if (hasFinePointer) return;
-
         updateVisibleSolutions(entries, visibleSolutions);
-        requestIdleCallback(() => (selectedSol = getSelectedSolution(visibleSolutions, solSelector) || selectedSol));
-        console.log(selectedSol.textContent);
       },
       {
         root: solScroller,
@@ -46,6 +43,14 @@
       observer.observe(el);
     }
   });
+
+  const debouncedSnapSolScroller = debounce(() => snapSolScroller(solScroller, solSelector, selectedSol), 200);
+  const handleScroll = () => {
+    if (hasFinePointer) return;
+
+    requestIdleCallback(() => (selectedSol = getSelectedSolution(visibleSolutions, solSelector) || selectedSol));
+    debouncedSnapSolScroller();
+  };
 
   /** Scroll the `solScroller` such that the `selectedSol` directly overlaps with `solSelector`. */
   function snapSolScroller(solScroller: HTMLElement, solSelector: HTMLElement, selectedSol: HTMLElement) {
@@ -90,11 +95,7 @@
     class="md:hidden pointer-fine:hidden -z-1 h-9 left-4 right-4 top-14 bg-rose-100 absolute"
   ></div>
 
-  <div
-    bind:this={solScroller}
-    onscroll={debounce(() => hasFinePointer || snapSolScroller(solScroller, solSelector, selectedSol), 200)}
-    class="overflow-y-scroll"
-  >
+  <div bind:this={solScroller} onscroll={handleScroll} class="overflow-y-scroll">
     {#each solutions.entries() as [date, sols]}
       <div class="pt-6 last:pb-[calc(100%-4rem)]">
         <span class="font-bold px-8 md:px-10 block mb-2">
