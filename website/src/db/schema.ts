@@ -1,5 +1,10 @@
 import { sqliteTable, text, primaryKey } from "drizzle-orm/sqlite-core";
 
+export const sides = sqliteTable("sides", {
+  date: text().primaryKey(),
+  sides: text().notNull(),
+});
+
 export const solutions = sqliteTable(
   "solutions",
   {
