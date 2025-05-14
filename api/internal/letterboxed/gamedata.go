@@ -12,6 +12,7 @@ import (
 type GameData struct {
 	Dictionary []string `json:"dictionary"`
 	Sides      []string `json:"sides"`
+	PrintDate  string   `json:"printDate"`
 }
 
 // GetTodaysGameData fetches the Letter Boxed game data for today from the NYT website.

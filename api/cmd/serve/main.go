@@ -31,11 +31,10 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	box := letterboxed.NewBox(gameData.Dictionary, gameData.Sides)
-
 	startTime := time.Now()
 
 	// Accumulate the solutions into a slice
-	solutions := [][]string{}
+	var solutions [][]string
 	for sol := range box.Solutions(maxWords) {
 		solutions = append(solutions, sol)
 	}
@@ -47,7 +46,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return strings.Compare(strings.Join(a, " "), strings.Join(b, " "))
 	})
 
-	solutionsJson, err := json.Marshal(solutions)
+	solutionsJson, err := json.Marshal(struct {
+		Date      string     `json:"date"`
+		Sides     []string   `json:"sides"`
+		Solutions [][]string `json:"solutions"`
+	}{gameData.PrintDate, gameData.Sides, solutions})
 	if err != nil {
 		fmt.Println("failed to serialize solutions:", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -60,7 +63,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/todays-solutions", handler)
+	mux.HandleFunc("/today", handler)
 	fmt.Println("Starting server at http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", middleware.GzipMiddleware(mux)))
 }
