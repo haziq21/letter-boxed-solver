@@ -26,7 +26,7 @@ $ cd api
 $ go run cmd/serve/main.go
 ```
 
-You can also run the solver without started a server with:
+You can also run the solver without starting the server:
 
 ```
 $ cd api
