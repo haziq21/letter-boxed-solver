@@ -14,4 +14,5 @@ FROM debian:bookworm
 COPY --from=builder /run-app /usr/local/bin/
 COPY --from=tired_proxy /tired-proxy /usr/local/bin/tired-proxy
 RUN apt-get update && apt-get install -y ca-certificates
-CMD /usr/local/bin/run-app & /usr/local/bin/tired-proxy --origin=http://localhost:3000
+CMD /usr/local/bin/run-app & \
+    /usr/local/bin/tired-proxy --origin=http://localhost:3000 --idle-time 10
