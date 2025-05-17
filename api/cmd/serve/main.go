@@ -13,6 +13,15 @@ import (
 	"time"
 )
 
+var PORT = 3000
+
+func main() {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/today", handler)
+	fmt.Printf("Starting server at http://localhost:%d\n", PORT)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", PORT), middleware.GzipMiddleware(mux)))
+}
+
 func handler(w http.ResponseWriter, r *http.Request) {
 	maxWords := 2 // Default value
 	if maxWordsParam := r.URL.Query().Get("max-words"); maxWordsParam != "" {
@@ -59,11 +68,4 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(solutionsJson)
-}
-
-func main() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/today", handler)
-	fmt.Println("Starting server at http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", middleware.GzipMiddleware(mux)))
 }
