@@ -6,7 +6,7 @@
   const { sides }: Props = $props();
 </script>
 
-<svg viewBox="-150 -150 300 300" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-75 h-75">
+<svg viewBox="-150 -150 300 300" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-75 h-75 lg:w-100 lg:h-100">
   <rect x="-90" y="-90" width="180" height="180" fill="white" stroke="black" stroke-width="2"></rect>
 
   {#each [-60, 0, 60] as x, i}

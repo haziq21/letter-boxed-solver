@@ -109,7 +109,7 @@
 
   <div bind:this={solScrollerElem} onscroll={handleScroll} class="overflow-y-scroll">
     {#each solutions.entries() as [date, sols]}
-      <div class="pt-6 last:pb-[calc(100%-4rem)]">
+      <div class="pt-6 last:pb-[calc(100%-3.5rem)]">
         <span class="font-bold px-8 md:px-10 block mb-2">
           {new Date(date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
         </span>
