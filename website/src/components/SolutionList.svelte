@@ -1,54 +1,68 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { debounce } from "../utils";
-  import { refSet } from "./actions/refSet";
+  import { refSet, refMap } from "./actions";
 
   interface Props {
     solutions: Map<string, string[][]>;
+    selected?: { sol: string[]; date: string };
     class: string | undefined;
   }
 
-  const { solutions, class: cls = "" }: Props = $props();
+  let { solutions, selected = $bindable(), class: cls = "" }: Props = $props();
 
   /** The scrollable element containing the solutions. */
-  let solScroller: HTMLElement;
+  let solScrollerElem: HTMLElement;
   /** The element that indicates the selected solution on mobile. */
-  let solSelector: HTMLElement;
+  let solSelectorElem: HTMLElement;
   /** The solutions that are fully visible in `solScroller`. */
-  const visibleSolutions = new Set<HTMLElement>();
+  const visibleSolElems = new Set<HTMLElement>();
   /** The currently selected solution. */
-  let selectedSol: HTMLElement;
-
-  let pointerMediaQuery: MediaQueryList;
-  let hasFinePointer = true;
+  let selectedSolElem: HTMLElement | undefined = $state();
+  let hoveredSolElem: HTMLElement | undefined = $state();
+  /** A map of solution elements to their corresponding data values. */
+  const solElemData = new Map<HTMLElement, { sol: string[]; date: string }>();
+  /** The result of the `(pointer: fine)` media query. */
+  let hasFinePointer = $state(true);
 
   onMount(() => {
-    pointerMediaQuery = window.matchMedia("(pointer: fine)");
+    const pointerMediaQuery = window.matchMedia("(pointer: fine)");
     hasFinePointer = pointerMediaQuery.matches;
     pointerMediaQuery.addEventListener("change", (e) => (hasFinePointer = e.matches));
 
     const observer = new IntersectionObserver(
       (entries) => {
         if (hasFinePointer) return;
-        updateVisibleSolutions(entries, visibleSolutions);
+        updateVisibleSolutions(entries, visibleSolElems);
       },
       {
-        root: solScroller,
+        root: solScrollerElem,
         rootMargin: "0px",
         threshold: 1,
       }
     );
 
-    for (const el of visibleSolutions) {
+    for (const el of visibleSolElems) {
       observer.observe(el);
     }
+
+    selectedSolElem = hasFinePointer
+      ? getSelectedSolution(visibleSolElems, solSelectorElem)!
+      : solElemData.keys().next().value!;
+    selected = solElemData.get(selectedSolElem)!;
   });
 
-  const debouncedSnapSolScroller = debounce(() => snapSolScroller(solScroller, solSelector, selectedSol), 200);
+  const debouncedSnapSolScroller = debounce(
+    () => snapSolScroller(solScrollerElem, solSelectorElem, selectedSolElem!),
+    200
+  );
   const handleScroll = () => {
     if (hasFinePointer) return;
 
-    requestIdleCallback(() => (selectedSol = getSelectedSolution(visibleSolutions, solSelector) || selectedSol));
+    requestIdleCallback(() => {
+      selectedSolElem = getSelectedSolution(visibleSolElems, solSelectorElem) || selectedSolElem;
+      selected = solElemData.get(selectedSolElem!)!;
+    });
     debouncedSnapSolScroller();
   };
 
@@ -67,21 +81,19 @@
     }
   }
 
-  /** Return the solution that overlaps the most with `solSelector`, or `null` if no solution overlaps. */
+  /** Return the solution element the closest to `solSelector`, or `null` if `visibleSolutions` is empty. */
   function getSelectedSolution(visibleSolutions: Set<HTMLElement>, solSelector: HTMLElement): HTMLElement | null {
-    let maxIntersectionRatio = 0;
+    let minDistance = Infinity;
     let selectedSol: HTMLElement | null = null;
 
     for (const sol of visibleSolutions) {
-      const { bottom: solBottom, top: solTop } = sol.getBoundingClientRect();
-      const { bottom: selectorBottom, top: selectorTop, height: selectorHeight } = solSelector.getBoundingClientRect();
+      const { top: solTop } = sol.getBoundingClientRect();
+      const { top: selectorTop } = solSelector.getBoundingClientRect();
+      const dist = Math.abs(solTop - selectorTop);
 
-      const intersectionRatio =
-        Math.max(0, Math.min(solBottom, selectorBottom) - Math.max(solTop, selectorTop)) / selectorHeight;
-
-      if (intersectionRatio > maxIntersectionRatio) {
+      if (dist < minDistance) {
         selectedSol = sol;
-        maxIntersectionRatio = intersectionRatio;
+        minDistance = dist;
       }
     }
 
@@ -91,11 +103,11 @@
 
 <div class={["relative", cls]}>
   <div
-    bind:this={solSelector}
+    bind:this={solSelectorElem}
     class="md:hidden pointer-fine:hidden -z-1 h-9 left-4 right-4 top-14 bg-rose-100 absolute"
   ></div>
 
-  <div bind:this={solScroller} onscroll={handleScroll} class="overflow-y-scroll">
+  <div bind:this={solScrollerElem} onscroll={handleScroll} class="overflow-y-scroll">
     {#each solutions.entries() as [date, sols]}
       <div class="pt-6 last:pb-[calc(100%-4rem)]">
         <span class="font-bold px-8 md:px-10 block mb-2">
@@ -104,8 +116,31 @@
         <ul class="flex flex-col px-4 md:px-6">
           {#each sols as words}
             <li
-              use:refSet={visibleSolutions}
-              class="solution px-4 py-1.5 not-first:-mt-1.5 pointer-fine:hover:bg-rose-100 tracking-wider"
+              use:refSet={visibleSolElems}
+              use:refMap={{ map: solElemData, value: { sol: words, date } }}
+              onmouseenter={(e) => {
+                if (!hasFinePointer) return;
+                hoveredSolElem = e.target as HTMLElement;
+                selected = solElemData.get(hoveredSolElem)!;
+              }}
+              onmouseleave={() => {
+                if (!hasFinePointer) return;
+                hoveredSolElem = undefined;
+                selected = solElemData.get(selectedSolElem!)!;
+              }}
+              onclick={(e) => {
+                if (!hasFinePointer) return;
+                selectedSolElem = e.target as HTMLElement;
+                selected = solElemData.get(selectedSolElem)!;
+              }}
+              class={[
+                "solution px-4 py-1.5 not-first:-mt-1.5 tracking-wider",
+                hasFinePointer &&
+                selectedSolElem !== undefined &&
+                words.every((w, i) => w === solElemData.get(selectedSolElem)!.sol[i])
+                  ? "bg-rose-100"
+                  : "pointer-fine:hover:bg-rose-50",
+              ]}
             >
               {words.join(" – ")}
             </li>
