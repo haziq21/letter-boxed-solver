@@ -115,34 +115,36 @@
         </span>
         <ul class="flex flex-col px-4 md:px-6">
           {#each sols as words}
-            <li
-              use:refSet={visibleSolElems}
-              use:refMap={{ map: solElemData, value: { sol: words, date } }}
-              onmouseenter={(e) => {
-                if (!hasFinePointer) return;
-                hoveredSolElem = e.target as HTMLElement;
-                selected = solElemData.get(hoveredSolElem)!;
-              }}
-              onmouseleave={() => {
-                if (!hasFinePointer) return;
-                hoveredSolElem = undefined;
-                selected = solElemData.get(selectedSolElem!)!;
-              }}
-              onclick={(e) => {
-                if (!hasFinePointer) return;
-                selectedSolElem = e.target as HTMLElement;
-                selected = solElemData.get(selectedSolElem)!;
-              }}
-              class={[
-                "solution px-4 py-1.5 not-first:-mt-1.5 tracking-wider",
-                hasFinePointer &&
-                selectedSolElem !== undefined &&
-                words.every((w, i) => w === solElemData.get(selectedSolElem)!.sol[i])
-                  ? "bg-rose-100"
-                  : "pointer-fine:hover:bg-rose-50",
-              ]}
-            >
-              {words.join(" – ")}
+            <li class="not-first:-mt-1.5">
+              <button
+                use:refSet={visibleSolElems}
+                use:refMap={{ map: solElemData, value: { sol: words, date } }}
+                onmouseenter={(e) => {
+                  if (!hasFinePointer) return;
+                  hoveredSolElem = e.target as HTMLElement;
+                  selected = solElemData.get(hoveredSolElem)!;
+                }}
+                onmouseleave={() => {
+                  if (!hasFinePointer) return;
+                  hoveredSolElem = undefined;
+                  selected = solElemData.get(selectedSolElem!)!;
+                }}
+                onclick={(e) => {
+                  selectedSolElem = e.target as HTMLElement;
+                  selected = solElemData.get(selectedSolElem)!;
+                  if (!hasFinePointer) snapSolScroller(solScrollerElem, solSelectorElem, selectedSolElem);
+                }}
+                class={[
+                  "block w-full px-4 py-1.5 tracking-wider text-left",
+                  hasFinePointer &&
+                  selectedSolElem !== undefined &&
+                  words.every((w, i) => w === solElemData.get(selectedSolElem!)!.sol[i])
+                    ? "bg-rose-100 relative z-1"
+                    : "pointer-fine:hover:bg-rose-50",
+                ]}
+              >
+                {words.join(" – ")}
+              </button>
             </li>
           {/each}
         </ul>
