@@ -3,7 +3,9 @@ import "../styles/global.css";
 import Main from "../components/Main.svelte";
 import { getAllSolutions, getAllSides } from "../repo";
 
+const startTime = Date.now();
 const [allSols, allSides] = await Promise.all([getAllSolutions(), getAllSides()]);
+console.log(`Data fetched in ${Date.now() - startTime}ms`);
 ---
 
 <html lang="en">
