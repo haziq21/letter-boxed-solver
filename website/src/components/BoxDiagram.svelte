@@ -13,7 +13,7 @@
       for (let j = 0; j < sides[i].length; j++) {
         map.set(sides[i][j], {
           x: [(j - 1) * 60, 90, (j - 1) * 60, -90][i],
-          y: [-90, (j - 1) * 60, 90, (1 - j) * 60][i],
+          y: [-90, (j - 1) * 60, 90, (j - 1) * 60][i],
           side: ["top", "right", "bottom", "left"][i] as SideDirection,
         });
       }
