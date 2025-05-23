@@ -26,25 +26,17 @@
   let hasFinePointer = $state(true);
 
   onMount(() => {
+    // Update `hasFinePointer` based on the media query
     const pointerMediaQuery = window.matchMedia("(pointer: fine)");
     hasFinePointer = pointerMediaQuery.matches;
     pointerMediaQuery.addEventListener("change", (e) => (hasFinePointer = e.matches));
 
+    // IntersectionObserver to maintain `visibleSolElems` for efficient updating of `selectedSolElem`
     const observer = new IntersectionObserver(
-      (entries) => {
-        if (hasFinePointer) return;
-        updateVisibleSolutions(entries, visibleSolElems);
-      },
-      {
-        root: solScrollerElem,
-        rootMargin: "0px",
-        threshold: 1,
-      }
+      (entries) => hasFinePointer || updateVisibleSolutions(entries, visibleSolElems),
+      { root: solScrollerElem, rootMargin: "0px", threshold: 1 }
     );
-
-    for (const el of visibleSolElems) {
-      observer.observe(el);
-    }
+    visibleSolElems.forEach((el) => observer.observe(el));
 
     selectedSolElem = hasFinePointer
       ? solElemData.keys().next().value!
@@ -114,11 +106,11 @@
           {new Date(date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
         </span>
         <ul class="flex flex-col px-4 md:px-6">
-          {#each sols as words}
+          {#each sols as sol}
             <li class="not-first:-mt-1.5">
               <button
                 use:refSet={visibleSolElems}
-                use:refMap={{ map: solElemData, value: { sol: words, date } }}
+                use:refMap={{ map: solElemData, value: { sol, date } }}
                 onmouseenter={(e) => {
                   if (!hasFinePointer) return;
                   hoveredSolElem = e.target as HTMLElement;
@@ -137,13 +129,13 @@
                 class={[
                   "block w-full px-4 py-1.5 tracking-wider text-left",
                   hasFinePointer &&
-                  selectedSolElem !== undefined &&
-                  words.every((w, i) => w === solElemData.get(selectedSolElem!)!.sol[i])
+                  selectedSolElem &&
+                  sol.every((w, i) => w === solElemData.get(selectedSolElem!)!.sol[i])
                     ? "bg-rose-100 relative z-1"
                     : "pointer-fine:hover:bg-rose-50",
                 ]}
               >
-                {words.join(" – ")}
+                {sol.join(" – ")}
               </button>
             </li>
           {/each}

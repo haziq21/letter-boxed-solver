@@ -4,11 +4,11 @@
   import SolutionList from "./SolutionList.svelte";
 
   interface Props {
-    allSols: Map<string, string[][]>;
-    allSides: Map<string, string[]>;
+    solsByDate: Map<string, string[][]>;
+    sidesByDate: Map<string, string[]>;
   }
 
-  let { allSols, allSides }: Props = $props();
+  let { solsByDate, sidesByDate }: Props = $props();
   let selectedSol: { sol: string[]; date: string } | undefined = $state();
 </script>
 
@@ -25,12 +25,13 @@
   </header>
 
   <div class="bg-rose-300 min-h-90 md:row-span-2 md:h-full flex items-center justify-center">
-    {#if selectedSol}
-      <BoxDiagram sides={allSides.get(selectedSol.date)!} />
-    {/if}
+    <BoxDiagram
+      sides={selectedSol ? sidesByDate.get(selectedSol.date)! : Array(4).fill("")}
+      letterSeq={selectedSol?.sol.join("")}
+    />
   </div>
 
   <main class="flex-1 min-h-0">
-    <SolutionList solutions={allSols} bind:selected={selectedSol} class="flex flex-col max-h-full" />
+    <SolutionList solutions={solsByDate} bind:selected={selectedSol} class="flex flex-col max-h-full" />
   </main>
 </div>

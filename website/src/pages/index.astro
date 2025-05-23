@@ -1,10 +1,10 @@
 ---
 import "../styles/global.css";
 import Main from "../components/Main.svelte";
-import { getAllSolutions, getAllSides } from "../repo";
+import { getSolutionsByDate, getSidesByDate } from "../repo";
 
 const startTime = Date.now();
-const [allSols, allSides] = await Promise.all([getAllSolutions(), getAllSides()]);
+const [solsByDate, sidesByDate] = await Promise.all([getSolutionsByDate(), getSidesByDate()]);
 console.log(`Data fetched in ${Date.now() - startTime}ms`);
 ---
 
@@ -15,6 +15,6 @@ console.log(`Data fetched in ${Date.now() - startTime}ms`);
     <title>Letter unBoxed</title>
   </head>
   <body class="font-franklin">
-    <Main client:load {allSols} {allSides} />
+    <Main client:load {solsByDate} {sidesByDate} />
   </body>
 </html>

@@ -2,7 +2,7 @@ import { db, sides, solutions } from "./db";
 import { desc } from "drizzle-orm";
 
 /** Retrieve all solutions from the database. Return a Map of date strings to arrays of solutions. */
-export async function getAllSolutions(): Promise<Map<string, string[][]>> {
+export async function getSolutionsByDate(): Promise<Map<string, string[][]>> {
   const sols = await db.select().from(solutions).orderBy(desc(solutions.date), solutions.words);
 
   // Aggregate the solutions by date
@@ -16,7 +16,7 @@ export async function getAllSolutions(): Promise<Map<string, string[][]>> {
 }
 
 /** Retrieve the sides of the puzzles for every date. Return a Map of date strings to arrays of sides. */
-export async function getAllSides(): Promise<Map<string, string[]>> {
+export async function getSidesByDate(): Promise<Map<string, string[]>> {
   const allSides = await db.select().from(sides).orderBy(desc(sides.date));
 
   // Aggregate the sides by date
