@@ -47,8 +47,8 @@
     }
 
     selectedSolElem = hasFinePointer
-      ? getSelectedSolution(visibleSolElems, solSelectorElem)!
-      : solElemData.keys().next().value!;
+      ? solElemData.keys().next().value!
+      : getSelectedSolution(visibleSolElems, solSelectorElem)!;
     selected = solElemData.get(selectedSolElem)!;
   });
 
