@@ -7,9 +7,6 @@ primary_region = "yyz" # Example region, user should change this
 [env]
   # Placeholder for the database path within the container
   DATABASE_PATH = "/data/db.sqlite"
-  # Litestream configuration will use this to know where to replicate from/to.
-  # This path will be on a mounted Fly volume.
-  REPLICA_PATH = "/data/litestream-replica/db.sqlite"
   # We'll set the auth token via secrets, but good to have a placeholder
   # LIBSQL_AUTH_TOKEN = "" # This will be set via fly secrets
   PORT = "8080"
@@ -35,10 +32,12 @@ primary_region = "yyz" # Example region, user should change this
     # Standard port for libSQL/Turso over HTTPS
     port = 5000 
     handlers = ["tls"] # Assuming libsql-server uses TLS here, or we might need a proxy
-  [[services.ports]]
-    # Alternative port for libSQL/Turso over HTTP (less common for prod)
+  [[services.ports]] # For client gRPC connections
     port = 5001
-    handlers = ["grpc"] # Changed from http to grpc
+    handlers = ["grpc"]
+  [[services.ports]] # For Raft/cluster node-to-node communication
+    port = 5002 # Example port, confirm with sqld docs & run.sh
+    # No handlers, raw TCP
 
 
   [[services.http_checks]]
