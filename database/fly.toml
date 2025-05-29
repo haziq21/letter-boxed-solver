@@ -1,0 +1,51 @@
+app = "letter-unboxed-db"
+primary_region = "yyz" # Example region, user should change this
+
+[build]
+  dockerfile = "Dockerfile" # Tells Fly to build using the Dockerfile in the current directory
+
+[env]
+  # Placeholder for the database path within the container
+  DATABASE_PATH = "/data/db.sqlite"
+  # Litestream configuration will use this to know where to replicate from/to.
+  # This path will be on a mounted Fly volume.
+  REPLICA_PATH = "/data/litestream-replica/db.sqlite"
+  # We'll set the auth token via secrets, but good to have a placeholder
+  # LIBSQL_AUTH_TOKEN = "" # This will be set via fly secrets
+  PORT = "8080"
+
+[[mounts]]
+  source = "db_data"
+  destination = "/data"
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 8080 # Port libsql-server will listen on
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0 # Can scale to 0 for non-prod
+
+  [[services.ports]]
+    port = 80 # HTTP port for Web UI if ever needed, or for future HTTP interface of libsql
+    handlers = ["http"]
+  [[services.ports]]
+    port = 443 # HTTPS port for Web UI
+    handlers = ["tls", "http"]
+  [[services.ports]]
+    # Standard port for libSQL/Turso over HTTPS
+    port = 5000 
+    handlers = ["tls"] # Assuming libsql-server uses TLS here, or we might need a proxy
+  [[services.ports]]
+    # Alternative port for libSQL/Turso over HTTP (less common for prod)
+    port = 5001
+    handlers = ["grpc"] # Changed from http to grpc
+
+
+  [[services.http_checks]]
+    interval = "10s"
+    timeout = "2s"
+    method = "GET" # This will need to be adjusted based on libsql-server's health check endpoint
+    path = "/health" # Placeholder, libsql-server might have a different or no HTTP health check
+
+  [[services.vm]]
+    size = "shared-cpu-1x" # Start with a small size
