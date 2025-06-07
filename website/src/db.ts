@@ -1,10 +1,7 @@
 import "dotenv/config";
-import { Redis as UpstashRedis } from "@upstash/redis";
+import { Redis } from "@upstash/redis";
 
-const redis = new UpstashRedis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-});
+const redis = Redis.fromEnv();
 
 export async function setPuzzle(date: string, puzzle: { sides: string[]; solutions: string[][] }): Promise<void> {
   await redis.json.set("puzzles", "$", "{}", { nx: true });

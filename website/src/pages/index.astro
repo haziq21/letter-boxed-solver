@@ -3,7 +3,10 @@ import "../styles/global.css";
 import Main from "../components/Main.svelte";
 import { getAllPuzzles } from "../db";
 
+const startTime = Date.now();
 const allPuzzles = await getAllPuzzles();
+console.log(`Loaded ${allPuzzles.size} puzzles in ${Date.now() - startTime}ms`);
+
 const solsByDate = new Map(allPuzzles.keys().map((date) => [date, allPuzzles.get(date)!.solutions]));
 const sidesByDate = new Map(allPuzzles.keys().map((date) => [date, allPuzzles.get(date)!.sides]));
 ---
