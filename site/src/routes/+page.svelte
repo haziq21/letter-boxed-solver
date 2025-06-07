@@ -10,6 +10,14 @@
   let selectedSol: { sol: string[]; date: string } | undefined = $state();
 </script>
 
+<svelte:head>
+  <title>Letter unBoxed</title>
+  <meta
+    name="description"
+    content="A computed archive of every accepted 2-word solution for the New York Times' Letter Boxed."
+  />
+</svelte:head>
+
 <div
   class="flex h-[100vh] flex-col md:grid md:grid-cols-[27rem_1fr] md:grid-rows-[min-content_1fr]"
 >
