@@ -12,11 +12,10 @@
   "dependencies": {
     "@astrojs/svelte": "^7.0.13",
     "@astrojs/vercel": "^8.1.4",
-    "@libsql/client": "^0.15.5",
     "@tailwindcss/vite": "^4.1.6",
+    "@upstash/redis": "^1.35.0",
     "astro": "^5.7.12",
     "dotenv": "^16.5.0",
-    "drizzle-orm": "^0.43.1",
     "svelte": "^5.28.6",
     "tailwindcss": "^4.1.6",
     "typescript": "^5.8.3",
@@ -25,6 +24,7 @@
   "packageManager": "pnpm@10.6.4+sha512.da3d715bfd22a9a105e6e8088cfc7826699332ded60c423b14ec613a185f1602206702ff0fe4c438cb15c979081ce4cb02568e364b15174503a63c7a8e2a5f6c",
   "devDependencies": {
     "drizzle-kit": "^0.31.1",
+    "redis": "^5.5.6",
     "tsx": "^4.19.4"
   }
 }

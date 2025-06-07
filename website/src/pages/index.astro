@@ -1,11 +1,11 @@
 ---
 import "../styles/global.css";
 import Main from "../components/Main.svelte";
-import { getSolutionsByDate, getSidesByDate } from "../repo";
+import { getAllPuzzles } from "../db";
 
-const startTime = Date.now();
-const [solsByDate, sidesByDate] = await Promise.all([getSolutionsByDate(), getSidesByDate()]);
-console.log(`Data fetched in ${Date.now() - startTime}ms`);
+const allPuzzles = await getAllPuzzles();
+const solsByDate = new Map(allPuzzles.keys().map((date) => [date, allPuzzles.get(date)!.solutions]));
+const sidesByDate = new Map(allPuzzles.keys().map((date) => [date, allPuzzles.get(date)!.sides]));
 ---
 
 <html lang="en">
