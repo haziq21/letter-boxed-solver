@@ -6,8 +6,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro",
-    "push-schema": "drizzle-kit push"
+    "astro": "astro"
   },
   "dependencies": {
     "@astrojs/svelte": "^7.0.13",
