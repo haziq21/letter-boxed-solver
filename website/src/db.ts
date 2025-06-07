@@ -13,5 +13,5 @@ export async function setPuzzle(date: string, puzzle: { sides: string[]; solutio
 
 export async function getAllPuzzles(): Promise<Map<string, { sides: string[]; solutions: string[][] }>> {
   const raw = await redis.json.get<{ [date: string]: { sides: string[]; solutions: string[][] } }>("puzzles");
-  return new Map(Object.entries(raw ?? {}).sort(([a], [b]) => +new Date(a) - +new Date(b)));
+  return new Map(Object.entries(raw ?? {}).sort(([a], [b]) => +new Date(b) - +new Date(a)));
 }
