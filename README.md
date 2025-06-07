@@ -4,18 +4,18 @@ A computed archive of every accepted 2-word solution for the New York Times' dai
 
 ## How it works
 
-The solver program (`api/`) uses a brute-force algorithm to find solutions for the current Letter Boxed puzzle. The main site (`website/`) displays the archive of past solutions.
+The solver program (`api/`) uses a brute-force algorithm to find solutions for the current Letter Boxed puzzle. The main site (`site/`) displays the archive of past solutions.
 
-A new Letter Boxed puzzle is released daily at 7AM UTC, so at 6AM UTC every day, the main site calls the solver API and stores the solutions on a [Turso](https://turso.tech/) database.
+A new Letter Boxed puzzle is released daily at 7AM UTC, so at 6AM UTC every day, the main site calls the solver API and stores the solutions on [Upstash](https://upstash.com/) Redis.
 
 Since it takes too long to run than most serverless providers allow, the solver API is hosted on [fly.io](https://fly.io/) (with the cheapest machine they offer), while the website is hosted on [Vercel](https://vercel.com/home) (free tier) to minimise costs.
 
-## Usage
+## Running locally
 
-To start the webapp:
+To start the webapp (you'll need to fill out `site/.env`):
 
 ```
-$ cd website
+$ cd site
 $ pnpm run dev
 ```
 
