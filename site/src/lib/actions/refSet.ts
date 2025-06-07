@@ -1,4 +1,4 @@
-import type { Action } from "svelte/action";
+import type { Action } from 'svelte/action';
 
 /**
  * Svelte action that adds the element to a `Set<HTMLElement>` when the
@@ -9,6 +9,6 @@ export const refSet: Action<HTMLElement, Set<HTMLElement>> = (node, set) => {
   return {
     destroy() {
       set.delete(node);
-    },
+    }
   };
 };

@@ -1,0 +1,6 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-libre-franklin: 'Libre Franklin', sans-serif;
+  --font-roboto-slab: 'Roboto Slab', sans-serif;
+}

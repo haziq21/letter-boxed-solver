@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { debounce } from "../utils";
-  import { refSet, refMap } from "./actions";
+  import { onMount } from 'svelte';
+  import { debounce } from '$lib/utils';
+  import { refSet, refMap } from '$lib/actions';
 
   interface Props {
     solutions: Map<string, string[][]>;
@@ -9,7 +9,7 @@
     class: string | undefined;
   }
 
-  let { solutions, selected = $bindable(), class: cls = "" }: Props = $props();
+  let { solutions, selected = $bindable(), class: cls = '' }: Props = $props();
 
   /** The scrollable element containing the solutions. */
   let solScrollerElem: HTMLElement;
@@ -27,14 +27,14 @@
 
   onMount(() => {
     // Update `hasFinePointer` based on the media query
-    const pointerMediaQuery = window.matchMedia("(pointer: fine)");
+    const pointerMediaQuery = window.matchMedia('(pointer: fine)');
     hasFinePointer = pointerMediaQuery.matches;
-    pointerMediaQuery.addEventListener("change", (e) => (hasFinePointer = e.matches));
+    pointerMediaQuery.addEventListener('change', (e) => (hasFinePointer = e.matches));
 
     // IntersectionObserver to maintain `visibleSolElems` for efficient updating of `selectedSolElem`
     const observer = new IntersectionObserver(
       (entries) => hasFinePointer || updateVisibleSolutions(entries, visibleSolElems),
-      { root: solScrollerElem, rootMargin: "0px", threshold: 1 }
+      { root: solScrollerElem, rootMargin: '0px', threshold: 1 }
     );
     visibleSolElems.forEach((el) => observer.observe(el));
 
@@ -59,14 +59,23 @@
   };
 
   /** Scroll the `solScroller` such that the `selectedSol` directly overlaps with `solSelector`. */
-  function snapSolScroller(solScroller: HTMLElement, solSelector: HTMLElement, selectedSol: HTMLElement) {
+  function snapSolScroller(
+    solScroller: HTMLElement,
+    solSelector: HTMLElement,
+    selectedSol: HTMLElement
+  ) {
     const scrollY =
-      selectedSol.offsetTop + solScroller.getBoundingClientRect().top - solSelector.getBoundingClientRect().top;
-    solScroller.scroll({ top: scrollY, behavior: "smooth" });
+      selectedSol.offsetTop +
+      solScroller.getBoundingClientRect().top -
+      solSelector.getBoundingClientRect().top;
+    solScroller.scroll({ top: scrollY, behavior: 'smooth' });
   }
 
   /** Update the set of visible solutions based on the entries provided by an `IntersectionObserver`. */
-  function updateVisibleSolutions(entries: IntersectionObserverEntry[], visibleSolutions: Set<HTMLElement>) {
+  function updateVisibleSolutions(
+    entries: IntersectionObserverEntry[],
+    visibleSolutions: Set<HTMLElement>
+  ) {
     for (const entry of entries) {
       if (entry.isIntersecting) visibleSolutions.add(entry.target as HTMLElement);
       else visibleSolutions.delete(entry.target as HTMLElement);
@@ -74,7 +83,10 @@
   }
 
   /** Return the solution element the closest to `solSelector`, or `null` if `visibleSolutions` is empty. */
-  function getSelectedSolution(visibleSolutions: Set<HTMLElement>, solSelector: HTMLElement): HTMLElement | null {
+  function getSelectedSolution(
+    visibleSolutions: Set<HTMLElement>,
+    solSelector: HTMLElement
+  ): HTMLElement | null {
     let minDistance = Infinity;
     let selectedSol: HTMLElement | null = null;
 
@@ -93,17 +105,21 @@
   }
 </script>
 
-<div class={["relative", cls]}>
+<div class={['relative', cls]}>
   <div
     bind:this={solSelectorElem}
-    class="md:hidden pointer-fine:hidden -z-1 h-9 left-4 right-4 top-14 bg-rose-100 absolute"
+    class="pointer-fine:hidden -z-1 absolute left-4 right-4 top-14 h-9 bg-rose-100 md:hidden"
   ></div>
 
   <div bind:this={solScrollerElem} onscroll={handleScroll} class="overflow-y-scroll">
     {#each solutions.entries() as [date, sols]}
       <div class="pt-6 last:pb-[calc(100%-3.5rem)]">
-        <span class="font-bold px-8 md:px-10 block mb-2">
-          {new Date(date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+        <span class="mb-2 block px-8 font-bold md:px-10">
+          {new Date(date).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })}
         </span>
         <ul class="flex flex-col px-4 md:px-6">
           {#each sols as sol}
@@ -124,18 +140,19 @@
                 onclick={(e) => {
                   selectedSolElem = e.target as HTMLElement;
                   selected = solElemData.get(selectedSolElem)!;
-                  if (!hasFinePointer) snapSolScroller(solScrollerElem, solSelectorElem, selectedSolElem);
+                  if (!hasFinePointer)
+                    snapSolScroller(solScrollerElem, solSelectorElem, selectedSolElem);
                 }}
                 class={[
-                  "block w-full px-4 py-1.5 tracking-wider text-left",
+                  'block w-full px-4 py-1.5 text-left tracking-wide',
                   hasFinePointer &&
                   selectedSolElem &&
                   sol.every((w, i) => w === solElemData.get(selectedSolElem!)!.sol[i])
-                    ? "bg-rose-100 relative z-1"
-                    : "pointer-fine:hover:bg-rose-50",
+                    ? 'z-1 relative bg-rose-100'
+                    : 'pointer-fine:hover:bg-rose-50'
                 ]}
               >
-                {sol.join(" – ")}
+                {sol.join(' – ')}
               </button>
             </li>
           {/each}
