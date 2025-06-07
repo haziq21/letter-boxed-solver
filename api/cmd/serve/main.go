@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"letter-boxed-solver/internal/letterboxed"
-	"letter-boxed-solver/internal/middleware"
+	"letter-unboxed/internal/middleware"
+	"letter-unboxed/internal/solver"
 	"log"
 	"net/http"
 	"slices"
@@ -32,14 +32,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch today's game data
-	gameData, err := letterboxed.GetTodaysGameData()
+	gameData, err := solver.GetTodaysGameData()
 	if err != nil {
 		fmt.Println("failed to get today's game data:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	box := letterboxed.NewBox(gameData.Dictionary, gameData.Sides)
+	box := solver.NewBox(gameData.Dictionary, gameData.Sides)
 	startTime := time.Now()
 
 	// Accumulate the solutions into a slice

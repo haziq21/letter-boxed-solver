@@ -1,4 +1,4 @@
-package letterboxed
+package solver
 
 import "sync"
 
@@ -29,11 +29,16 @@ func (t *StringTree) PopSequence() []string {
 	return t.RootNode.PopSequence()
 }
 
-func (t *StringTree) WaitToPopSequence() []string {
+// PopOrWaitSequence returns a channel that sends a sequence popped from the tree if available.
+// Otherwise, it waits for a new sequence to be pushed into the tree and then pops that.
+func (t *StringTree) PopOrWaitSequence() <-chan []string {
 	if seq := t.PopSequence(); seq != nil {
-		return seq
+		ch := make(chan []string, 1)
+		ch <- seq
+		return ch
 	}
-	return <-t.newSeq
+
+	return t.newSeq
 }
 
 type TreeNode map[string]*TreeNode

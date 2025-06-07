@@ -1,4 +1,4 @@
-package letterboxed
+package solver
 
 import (
 	"bytes"

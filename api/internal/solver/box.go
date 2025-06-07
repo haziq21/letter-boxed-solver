@@ -1,8 +1,8 @@
-package letterboxed
+package solver
 
 import (
 	"context"
-	"letter-boxed-solver/internal/sets"
+	"letter-unboxed/internal/sets"
 	"runtime"
 	"strings"
 	"sync"
@@ -52,17 +52,14 @@ func (box *LetterBoxed) Solutions(maxWords int) <-chan []string {
 	for i := 0; i < runtime.NumCPU(); i++ {
 		go func() {
 			for {
-				// Make this better. This could be a memory leak if the context is
-				// cancelled right after the select (e.g. when maxWords = 1)
+				var previousWords []string
 				select {
+				case previousWords = <-wordTree.PopOrWaitSequence():
 				case <-ctx.Done():
 					return
-				default:
 				}
 
-				previousWords := wordTree.WaitToPopSequence()
 				res := box.subSolution(previousWords, maxWords)
-
 				for _, last := range res.lastWords {
 					out <- append(previousWords, last)
 				}

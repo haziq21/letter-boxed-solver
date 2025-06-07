@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"letter-boxed-solver/internal/letterboxed"
+	"letter-unboxed/internal/solver"
 	"strings"
 	"time"
 )
@@ -14,13 +14,13 @@ func main() {
 	flag.Parse()
 
 	// Fetch today's game data
-	gameData, err := letterboxed.GetTodaysGameData()
+	gameData, err := solver.GetTodaysGameData()
 	if err != nil {
 		fmt.Println("failed to get today's game data:", err)
 		return
 	}
 
-	box := letterboxed.NewBox(gameData.Dictionary, gameData.Sides)
+	box := solver.NewBox(gameData.Dictionary, gameData.Sides)
 	startTime := time.Now()
 
 	// Get every solution
