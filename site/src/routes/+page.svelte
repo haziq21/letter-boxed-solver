@@ -5,7 +5,23 @@
   import type { PageProps } from './$types';
 
   const { data }: PageProps = $props();
-  const { solsByDate, sidesByDate } = data;
+
+  // Remove spoilers
+  const [today, timeNow] = new Date().toISOString().split('T');
+  const todayDate = new Date(today);
+  for (const date of data.allPuzzles.keys()) {
+    const puzzleDate = new Date(date);
+    const puzzleEndingAfterToday = date >= today;
+    const puzzleEndingLaterToday =
+      puzzleDate.getTime() + 24 * 60 * 60 * 1000 === todayDate.getTime() && timeNow < '07:00:00';
+
+    if (puzzleEndingAfterToday || puzzleEndingLaterToday) {
+      data.allPuzzles.delete(date);
+    }
+  }
+
+  const sidesByDate = new Map(data.allPuzzles.entries().map(([date, v]) => [date, v.sides]));
+  const solsByDate = new Map(data.allPuzzles.entries().map(([date, v]) => [date, v.solutions]));
 
   let selectedSol: { sol: string[]; date: string } | undefined = $state();
 </script>
