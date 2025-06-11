@@ -14,6 +14,9 @@ importers:
       dotenv:
         specifier: ^16.5.0
         version: 16.5.0
+      zod:
+        specifier: ^3.25.61
+        version: 3.25.61
     devDependencies:
       '@sveltejs/adapter-vercel':
         specifier: ^5.6.3
@@ -1073,6 +1076,9 @@ packages:
   zimmerframe@1.1.2:
     resolution: {integrity: sha512-rAbqEGa8ovJy4pyBxZM70hg4pE6gDgaQ0Sl9M3enG3I0d6H4XSAM3GeNGLKnsBpuijUow064sf7ww1nutC5/3w==}
 
+  zod@3.25.61:
+    resolution: {integrity: sha512-fzfJgUw78LTNnHujj9re1Ov/JJQkRZZGDMcYqSx7Hp4rPOkKywaFHq0S6GoHeXs0wGNE/sIOutkXgnwzrVOGCQ==}
+
 snapshots:
 
   '@ampproject/remapping@2.3.0':
@@ -1881,3 +1887,5 @@ snapshots:
   yallist@5.0.0: {}
 
   zimmerframe@1.1.2: {}
+
+  zod@3.25.61: {}
