@@ -12,7 +12,7 @@ const apiResSchema = z.object({
 export const GET: RequestHandler = async () => {
   const res = await fetch(`${API_URL!}/today?max-words=2`);
   const puzzle = apiResSchema.parse(await res.json());
-  setPuzzle(puzzle.date, { sides: puzzle.sides, solutions: puzzle.solutions });
+  await setPuzzle(puzzle.date, { sides: puzzle.sides, solutions: puzzle.solutions });
 
   return new Response(null, { status: 204 });
 };
