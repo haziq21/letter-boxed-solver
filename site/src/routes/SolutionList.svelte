@@ -1,15 +1,15 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { debounce } from '$lib/utils';
+  import { arrEq, debounce } from '$lib/utils';
   import { refSet, refMap } from '$lib/actions';
 
   interface Props {
-    solutions: Map<string, string[][]>;
-    selected?: { sol: string[]; date: string };
+    puzzles: { date: Date; solutions: string[][] }[];
+    selected?: { solution: string[]; date: Date };
     class: string | undefined;
   }
 
-  let { solutions, selected = $bindable(), class: cls = '' }: Props = $props();
+  let { puzzles, selected = $bindable(), class: cls = '' }: Props = $props();
 
   /** The scrollable element containing the solutions. */
   let solScrollerElem: HTMLElement;
@@ -21,7 +21,7 @@
   let selectedSolElem: HTMLElement | undefined = $state();
   let hoveredSolElem: HTMLElement | undefined = $state();
   /** A map of solution elements to their corresponding data values. */
-  const solElemData = new Map<HTMLElement, { sol: string[]; date: string }>();
+  const solElemData = new Map<HTMLElement, { solution: string[]; date: Date }>();
   /** The result of the `(pointer: fine)` media query. */
   let hasFinePointer = $state(true);
 
@@ -39,8 +39,10 @@
     visibleSolElems.forEach((el) => observer.observe(el));
 
     selectedSolElem = hasFinePointer
-      ? solElemData.keys().next().value!
-      : getSelectedSolution(visibleSolElems, solSelectorElem)!;
+      ? // If the user is on desktop, default to the first solution
+        solElemData.keys().next().value!
+      : // If the user is on mobile, select the solution selected by the solution selector
+        getSelectedSolution(visibleSolElems, solSelectorElem)!;
     selected = solElemData.get(selectedSolElem)!;
   });
 
@@ -48,7 +50,9 @@
     () => snapSolScroller(solScrollerElem, solSelectorElem, selectedSolElem!),
     200
   );
-  const handleScroll = () => {
+
+  /** Scroll handler for `solScrollerElem`. */
+  const onscroll = () => {
     if (hasFinePointer) return;
 
     requestIdleCallback(() => {
@@ -56,6 +60,27 @@
       selected = solElemData.get(selectedSolElem!)!;
     });
     debouncedSnapSolScroller();
+  };
+
+  /** Mouseenter handler for `visibleSolElems`. */
+  const onmouseenter = (e: MouseEvent) => {
+    if (!hasFinePointer) return;
+    hoveredSolElem = e.target as HTMLElement;
+    selected = solElemData.get(hoveredSolElem)!;
+  };
+
+  /** Mouseleave handler for `visibleSolElems`. */
+  const onmouseleave = () => {
+    if (!hasFinePointer) return;
+    hoveredSolElem = undefined;
+    selected = solElemData.get(selectedSolElem!)!;
+  };
+
+  /** Click handler for `visibleSolElems`. */
+  const onclick = (e: MouseEvent) => {
+    selectedSolElem = e.target as HTMLElement;
+    selected = solElemData.get(selectedSolElem)!;
+    if (!hasFinePointer) snapSolScroller(solScrollerElem, solSelectorElem, selectedSolElem);
   };
 
   /** Scroll the `solScroller` such that the `selectedSol` directly overlaps with `solSelector`. */
@@ -111,48 +136,34 @@
     class="pointer-fine:hidden -z-1 absolute left-4 right-4 top-14 h-9 bg-rose-100 md:hidden"
   ></div>
 
-  <div bind:this={solScrollerElem} onscroll={handleScroll} class="overflow-y-scroll">
-    {#each solutions.entries() as [date, sols]}
+  <div bind:this={solScrollerElem} {onscroll} class="overflow-y-scroll">
+    <!-- ...rest to retain any other properties (e.g. `sides`). Maybe this is messy and hacky. -->
+    {#each puzzles as { date, solutions, ...rest }}
       <div class="pt-6 last:pb-[calc(100%-3.5rem)]">
         <span class="mb-2 block px-8 font-bold md:px-10">
-          {new Date(date).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          })}
+          {date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
         </span>
+
         <ul class="flex flex-col px-4 md:px-6">
-          {#each sols as sol}
+          {#each solutions as solution}
             <li class="not-first:-mt-1.5">
               <button
                 use:refSet={visibleSolElems}
-                use:refMap={{ map: solElemData, value: { sol, date } }}
-                onmouseenter={(e) => {
-                  if (!hasFinePointer) return;
-                  hoveredSolElem = e.target as HTMLElement;
-                  selected = solElemData.get(hoveredSolElem)!;
-                }}
-                onmouseleave={() => {
-                  if (!hasFinePointer) return;
-                  hoveredSolElem = undefined;
-                  selected = solElemData.get(selectedSolElem!)!;
-                }}
-                onclick={(e) => {
-                  selectedSolElem = e.target as HTMLElement;
-                  selected = solElemData.get(selectedSolElem)!;
-                  if (!hasFinePointer)
-                    snapSolScroller(solScrollerElem, solSelectorElem, selectedSolElem);
-                }}
+                use:refMap={{ map: solElemData, value: { solution, date, ...rest } }}
+                {onmouseenter}
+                {onmouseleave}
+                {onclick}
                 class={[
                   'block w-full px-4 py-1.5 text-left tracking-wide',
                   hasFinePointer &&
                   selectedSolElem &&
-                  sol.every((w, i) => w === solElemData.get(selectedSolElem!)!.sol[i])
+                  // "if this <button> is the selected solution"
+                  arrEq(solution, solElemData.get(selectedSolElem)!.solution)
                     ? 'z-1 relative bg-rose-100'
                     : 'pointer-fine:hover:bg-rose-50'
                 ]}
               >
-                {sol.join(' – ')}
+                {solution.join(' – ')}
               </button>
             </li>
           {/each}

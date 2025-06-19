@@ -5,32 +5,14 @@
   import type { PageProps } from './$types';
 
   const { data }: PageProps = $props();
-
-  // Remove spoilers
-  const [today, timeNow] = new Date().toISOString().split('T');
-  const todayDate = new Date(today);
-  for (const date of data.allPuzzles.keys()) {
-    const puzzleDate = new Date(date);
-    const puzzleEndingAfterToday = date >= today;
-    const puzzleEndingLaterToday =
-      puzzleDate.getTime() + 24 * 60 * 60 * 1000 === todayDate.getTime() && timeNow < '07:00:00';
-
-    if (puzzleEndingAfterToday || puzzleEndingLaterToday) {
-      data.allPuzzles.delete(date);
-    }
-  }
-
-  const sidesByDate = new Map(data.allPuzzles.entries().map(([date, v]) => [date, v.sides]));
-  const solsByDate = new Map(data.allPuzzles.entries().map(([date, v]) => [date, v.solutions]));
-
-  let selectedSol: { sol: string[]; date: string } | undefined = $state();
+  let selected: { date: Date; sides: string[]; solution: string[] } | undefined = $state();
 </script>
 
 <svelte:head>
   <title>Letter unBoxed</title>
   <meta
     name="description"
-    content="A computed archive of every accepted 2-word solution for the New York Times' Letter Boxed."
+    content="A generated archive of every accepted 2-word solution for the New York Times' Letter Boxed."
   />
 </svelte:head>
 
@@ -45,23 +27,19 @@
       <a href="https://github.com/haziq21/letter-unboxed"><GithubIcon /></a>
     </div>
     <p class="text-sm md:text-base">
-      A computed archive of every accepted 2-word solution for the New York Times'
+      A generated archive of every accepted 2-word solution for the New York Times'
       <a href="https://www.nytimes.com/puzzles/letter-boxed" class="underline">Letter Boxed</a>.
     </p>
   </header>
 
   <div class="min-h-90 flex items-center justify-center bg-rose-300 md:row-span-2 md:h-full">
     <BoxDiagram
-      sides={selectedSol ? sidesByDate.get(selectedSol.date)! : Array(4).fill('')}
-      letterSeq={selectedSol?.sol.join('')}
+      sides={selected?.sides ?? Array(4).fill('')}
+      letterSeq={selected?.solution.join('')}
     />
   </div>
 
   <main class="min-h-0 flex-1">
-    <SolutionList
-      solutions={solsByDate}
-      bind:selected={selectedSol}
-      class="flex max-h-full flex-col"
-    />
+    <SolutionList puzzles={data.puzzles} bind:selected class="flex max-h-full flex-col" />
   </main>
 </div>
