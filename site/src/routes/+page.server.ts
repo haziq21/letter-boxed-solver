@@ -1,4 +1,4 @@
-import { getAllDefinitions, getPuzzles } from '$lib/server/database';
+import { getDefinitions, getPuzzles } from '$lib/server/database';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
@@ -7,7 +7,7 @@ export const load: PageServerLoad = async () => {
 
   const [puzzles, definitions] = await Promise.all([
     getPuzzles({ maxDate }),
-    getAllDefinitions({ maxDate })
+    getDefinitions({ maxDate })
   ]);
   console.log(
     `Loaded ${puzzles.length} puzzles (${definitions.size} defs) in ${Date.now() - +now}ms`

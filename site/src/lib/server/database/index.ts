@@ -5,27 +5,21 @@ import { desc, eq, lte, sql } from 'drizzle-orm';
 
 const db = drizzle(DATABASE_URL);
 
-export async function upsertPuzzle(puzzle: {
-  date: Date;
-  sides: string[];
-  solutions: string[][];
-  definitions: Record<string, string>;
-}) {
-  const { date, sides, solutions, definitions } = puzzle;
+export async function upsertPuzzle(puzzle: { date: Date; sides: string[]; solutions: string[][] }) {
+  const { date, sides, solutions } = puzzle;
+  await db.insert(puzzles).values({ date, sides, solutions }).onConflictDoUpdate({
+    target: puzzles.date,
+    set: { sides, solutions }
+  });
+}
 
-  await Promise.all([
-    db.insert(puzzles).values({ date, sides, solutions }).onConflictDoUpdate({
-      target: puzzles.date,
-      set: { sides, solutions }
-    }),
-    db
-      .insert(dictionary)
-      .values(Object.entries(definitions).map(([word, definition]) => ({ word, definition })))
-      .onConflictDoUpdate({
-        target: dictionary.word,
-        set: { definition: sql.raw(`excluded.${dictionary.definition.name}`) }
-      })
-  ]);
+export async function upsertDefinitions(definitions: Record<string, string>) {
+  db.insert(dictionary)
+    .values(Object.entries(definitions).map(([word, definition]) => ({ word, definition })))
+    .onConflictDoUpdate({
+      target: dictionary.word,
+      set: { definition: sql.raw(`excluded.${dictionary.definition.name}`) }
+    });
 }
 
 export async function getPuzzles(options?: {
@@ -41,9 +35,7 @@ export async function getPuzzles(options?: {
     .orderBy(desc(puzzles.date));
 }
 
-export async function getAllDefinitions(options?: {
-  maxDate?: Date;
-}): Promise<Map<string, string>> {
+export async function getDefinitions(options?: { maxDate?: Date }): Promise<Map<string, string>> {
   let defs: { word: string; definition: string }[];
   if (!options?.maxDate) {
     defs = await db.select().from(dictionary);

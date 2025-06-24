@@ -32,11 +32,27 @@
     </p>
   </header>
 
-  <div class="min-h-90 flex items-center justify-center bg-rose-300 md:row-span-2 md:h-full">
+  <div
+    class="min-h-90 flex flex-col items-center justify-center bg-rose-300 px-8 md:row-span-2 md:h-full"
+  >
     <BoxDiagram
       sides={selected?.sides ?? Array(4).fill('')}
       letterSeq={selected?.solution.join('')}
+      class="mt-4"
     />
+
+    <div
+      class="md:w-75 lg:w-100 text-2xs mb-3 mt-2 flex h-8 w-full flex-col justify-end lg:text-xs"
+    >
+      {#each selected?.solution ?? [] as word}
+        {#if data.definitions.has(word)}
+          <p>
+            <span class="mr-3 font-semibold">{word}</span>
+            <span>{data.definitions.get(word)}</span>
+          </p>
+        {/if}
+      {/each}
+    </div>
   </div>
 
   <main class="min-h-0 flex-1">

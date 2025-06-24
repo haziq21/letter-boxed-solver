@@ -2,9 +2,10 @@
   interface Props {
     sides: string[];
     letterSeq?: string;
+    class?: string;
   }
 
-  let { sides, letterSeq = '' }: Props = $props();
+  let { sides, letterSeq = '', class: cls }: Props = $props();
   let points = $derived.by(() => {
     type PointData = {
       cx: number;
@@ -40,7 +41,7 @@
   viewBox="-150 -150 300 300"
   fill="none"
   xmlns="http://www.w3.org/2000/svg"
-  class="w-75 h-75 lg:w-100 lg:h-100"
+  class={['w-75 h-75 lg:w-100 lg:h-100', cls]}
 >
   <rect x="-90" y="-90" width="180" height="180" fill="white" stroke-width="2" />
   <polyline
