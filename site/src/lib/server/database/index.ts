@@ -14,7 +14,8 @@ export async function upsertPuzzle(puzzle: { date: Date; sides: string[]; soluti
 }
 
 export async function upsertDefinitions(definitions: Record<string, string>) {
-  db.insert(dictionary)
+  await db
+    .insert(dictionary)
     .values(Object.entries(definitions).map(([word, definition]) => ({ word, definition })))
     .onConflictDoUpdate({
       target: dictionary.word,
